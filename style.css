@@ -120,24 +120,34 @@ ul#todo-list {
     border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 16px;
-    transition: var(--transition);
-    animation: slideIn 0.3s ease-out;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease, background-color 0.3s ease;
+    animation: popup 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes slideIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+@keyframes popup {
+    from { opacity: 0; transform: scale(0.8) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideOut {
+    to { opacity: 0; transform: translateX(-20px) scale(0.95); }
+}
+
+.todo-item.removing {
+    animation: slideOut 0.3s ease forwards;
+    pointer-events: none;
 }
 
 .todo-item:hover {
     border-color: var(--accent-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
 }
 
 .todo-item.completed {
     background: #f8fafc;
     border-color: transparent;
+    opacity: 0.6;
 }
 
 .todo-item.completed span {

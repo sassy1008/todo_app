@@ -88,8 +88,20 @@ window.toggleTodo = function(id) {
  * @param {number} id - 항목의 고유 ID
  */
 window.deleteTodo = function(id) {
-    todos = todos.filter(t => t.id !== id);
-    saveAndRender();
+    // 해당 ID를 가진 DOM 요소를 찾아 애니메이션 클래스 추가
+    const items = document.querySelectorAll('.todo-item');
+    items.forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.getAttribute('onchange').includes(id.toString())) {
+            item.classList.add('removing');
+        }
+    });
+
+    // 애니메이션 시간 대기 후 실제 데이터 삭제 및 렌더링
+    setTimeout(() => {
+        todos = todos.filter(t => t.id !== id);
+        saveAndRender();
+    }, 300);
 };
 
 /**

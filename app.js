@@ -30,7 +30,9 @@ function renderTodos() {
 
     sortedTodos.forEach((todo) => {
         const li = document.createElement('li');
+        // data-todo-id로 고유 식별자 부여 (onchange 파싱보다 안정적)
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+        li.dataset.todoId = todo.id;
         
         li.innerHTML = `
             <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${todo.id})">
@@ -88,20 +90,34 @@ window.toggleTodo = function(id) {
  * @param {number} id - 항목의 고유 ID
  */
 window.deleteTodo = function(id) {
-    // 해당 ID를 가진 DOM 요소를 찾아 애니메이션 클래스 추가
-    const items = document.querySelectorAll('.todo-item');
-    items.forEach(item => {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (checkbox && checkbox.getAttribute('onchange').includes(id.toString())) {
-            item.classList.add('removing');
-        }
-    });
+    // data-todo-id 속성으로 대상 DOM 요소를 정확히 찾음
+    const item = todoList.querySelector(`[data-todo-id="${id}"]`);
+    if (!item) return;
 
-    // 애니메이션 시간 대기 후 실제 데이터 삭제 및 렌더링
+    // === 1단계: 내용 페이드아웃 (0 ~ 180ms) ===
+    item.classList.add('removing');
+
+    // === 2단계: 높이 축소로 아래 항목들이 부드럽게 올라옴 (180ms ~) ===
+    setTimeout(() => {
+        // 현재 실제 높이를 명시적으로 고정한 뒤 transition으로 0까지 줄임
+        const currentHeight = item.offsetHeight;
+        item.style.height = currentHeight + 'px';
+        item.style.paddingTop = '0';
+        item.style.paddingBottom = '0';
+        item.style.marginBottom = '0';
+
+        // style 정착 후 바로 0으로 전환 시작 (브라우저 repaint 보장)
+        requestAnimationFrame(() => {
+            item.classList.add('collapsing');
+            item.style.height = '0';
+        });
+    }, 180);
+
+    // === 3단계: 모든 애니메이션 완료 후 데이터 삭제 및 재렌더링 (180 + 240ms) ===
     setTimeout(() => {
         todos = todos.filter(t => t.id !== id);
         saveAndRender();
-    }, 300);
+    }, 420);
 };
 
 /**

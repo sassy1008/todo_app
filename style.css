@@ -120,22 +120,48 @@ ul#todo-list {
     border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 16px;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease, background-color 0.3s ease;
-    animation: popup 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* 호버/완료 상태 전환에 사용할 transition */
+    transition: transform 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background-color 0.35s ease,
+                opacity 0.35s ease;
+    /* 추가 시: 살짝 아래에서 위로 부드럽게 나타남 */
+    animation: gentleSlideIn 0.35s ease-out both;
+    overflow: hidden; /* 높이 축소 애니메이션을 위해 필요 */
 }
 
-@keyframes popup {
-    from { opacity: 0; transform: scale(0.8) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+@keyframes gentleSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-@keyframes slideOut {
-    to { opacity: 0; transform: translateX(-20px) scale(0.95); }
+/* 삭제 1단계: 내용이 왼쪽으로 부드럽게 페이드아웃 */
+@keyframes fadeSlideOut {
+    to {
+        opacity: 0;
+        transform: translateX(-14px);
+    }
 }
 
 .todo-item.removing {
-    animation: slideOut 0.3s ease forwards;
+    animation: fadeSlideOut 0.18s ease forwards;
     pointer-events: none;
+}
+
+/* 삭제 2단계: JS에서 높이를 직접 0으로 전환 (height-collapse 클래스) */
+.todo-item.collapsing {
+    overflow: hidden;
+    transition: height 0.22s ease,
+                padding-top 0.22s ease,
+                padding-bottom 0.22s ease,
+                margin-bottom 0.22s ease !important;
 }
 
 .todo-item:hover {

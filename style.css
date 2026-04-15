@@ -52,12 +52,12 @@ body {
 
 h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 2.25rem;
-    font-weight: 700;
+    font-size: 2.5rem;  /* 조금 더 크게 */
+    font-weight: 800;
     margin-bottom: 2rem;
     text-align: center;
     color: var(--text-primary);
-    letter-spacing: -0.025em;
+    letter-spacing: -0.03em;
 }
 
 .input-group {
@@ -215,7 +215,72 @@ ul#todo-list {
     color: var(--danger);
 }
 
-/* Responsive Design */
+/* ===== 빈 상태 안내 메시지 ===== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-secondary);
+    animation: gentleSlideIn 0.4s ease-out;
+}
+
+.empty-state .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.empty-state .empty-sub {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    opacity: 0.7;
+}
+
+/* ===== 하단 푸터 (남은 개수 + 일괄 삭제 버튼) ===== */
+.list-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.remaining-count {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.clear-btn {
+    background: transparent;
+    border: 1px solid #fca5a5;
+    color: var(--danger);
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.clear-btn:hover {
+    background: #fef2f2;
+    border-color: var(--danger);
+}
+
+/* ===== 유틸리티 클래스 ===== */
+.hidden {
+    display: none !important;
+}
+
+/* ===== Responsive Design ===== */
 @media (max-width: 480px) {
     .container {
         padding: 1.5rem;

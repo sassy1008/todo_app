@@ -2,6 +2,9 @@
 const todoInput = document.getElementById('todo-input');
 const addBtn = document.getElementById('add-btn');
 const todoList = document.getElementById('todo-list');
+const emptyState = document.getElementById('empty-state');         // 빈 상태 메시지
+const remainingCount = document.getElementById('remaining-count'); // 남은 개수 텍스트
+const clearCompletedBtn = document.getElementById('clear-completed-btn'); // 일괄 삭제 버튼
 
 // 초기 데이터 로드 (createdAt, completedAt이 없는 기존 데이터 대응)
 let todos = JSON.parse(localStorage.getItem('todos')) || [];
@@ -48,6 +51,33 @@ function renderTodos() {
     // Lucide 아이콘 초기화
     if (window.lucide) {
         lucide.createIcons();
+    }
+
+    // ===== 하단 UI 업데이트 =====
+    const remaining = todos.filter(t => !t.completed).length;
+    const hasCompleted = todos.some(t => t.completed);
+
+    // 빈 상태 안내 메시지 표시/숨김
+    if (todos.length === 0) {
+        emptyState.classList.remove('hidden');
+    } else {
+        emptyState.classList.add('hidden');
+    }
+
+    // 남은 개수 텍스트 업데이트
+    if (remaining === 0 && todos.length > 0) {
+        remainingCount.textContent = '🎉 모든 할 일을 완료했어요!';
+    } else if (remaining > 0) {
+        remainingCount.textContent = `${remaining}개의 할 일이 남았습니다.`;
+    } else {
+        remainingCount.textContent = '';
+    }
+
+    // 완료된 항목이 있을 때만 일괄 삭제 버튼 표시
+    if (hasCompleted) {
+        clearCompletedBtn.classList.remove('hidden');
+    } else {
+        clearCompletedBtn.classList.add('hidden');
     }
 }
 
@@ -128,8 +158,18 @@ function saveAndRender() {
     renderTodos();
 }
 
+/**
+ * 완료된 모든 할 일을 일괄 삭제합니다.
+ * - 요청에 따라: todos 배열에서 completed가 true인 항목들만 제거
+ */
+function clearCompleted() {
+    todos = todos.filter(t => !t.completed);
+    saveAndRender();
+}
+
 // 이벤트 리스너 등록
 addBtn.addEventListener('click', addTodo);
+clearCompletedBtn.addEventListener('click', clearCompleted); // 일괄 삭제 버튼
 
 todoInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {

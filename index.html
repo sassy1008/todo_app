@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal To-Do List | 깔끔한 일정 관리</title>
+    <title>내 할일 | 깔끔한 일정 관리</title>
     <meta name="description" content="모던하고 깔끔한 디자인으로 할 일을 효율적으로 관리하세요.">
     <link rel="stylesheet" href="style.css">
     <!-- Lucide Icons for better visuals -->
@@ -11,14 +11,32 @@
 </head>
 <body>
     <main class="container">
-        <h1>My Tasks</h1>
+        <!-- 제목 영역 -->
+        <h1>내 할일 ✅</h1>
+
+        <!-- 입력 영역 -->
         <div class="input-group">
             <input type="text" id="todo-input" placeholder="새로운 할 일을 입력하세요..." aria-label="할 일 입력">
             <button id="add-btn">추가</button>
         </div>
+
+        <!-- 할 일 목록 -->
         <ul id="todo-list">
             <!-- 할 일 항목이 여기에 동적으로 추가됩니다 -->
         </ul>
+
+        <!-- 빈 상태 안내 메시지 (할 일이 없을 때 표시됨) -->
+        <div id="empty-state" class="empty-state hidden">
+            <span class="empty-icon">📝</span>
+            <p>아직 할 일이 없습니다.</p>
+            <p class="empty-sub">위에 추가해 보세요!</p>
+        </div>
+
+        <!-- 하단 정보 영역 (남은 개수 + 완료 일괄 삭제) -->
+        <footer class="list-footer" id="list-footer">
+            <span id="remaining-count" class="remaining-count"></span>
+            <button id="clear-completed-btn" class="clear-btn hidden">완료된 항목 지우기</button>
+        </footer>
     </main>
 
     <script src="app.js"></script>

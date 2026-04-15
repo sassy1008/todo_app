@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern To-Do List | 세련된 일정 관리</title>
+    <meta name="description" content="글래스모피즘 기반의 세련된 디자인으로 할 일을 효율적으로 관리하세요.">
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons for better visuals -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <main class="container">
+        <h1>My Tasks</h1>
+        <div class="input-group">
+            <input type="text" id="todo-input" placeholder="새로운 할 일을 입력하세요..." aria-label="할 일 입력">
+            <button id="add-btn">추가</button>
+        </div>
+        <ul id="todo-list">
+            <!-- 할 일 항목이 여기에 동적으로 추가됩니다 -->
+        </ul>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        // Lucide 아이콘 초기화
+        lucide.createIcons();
+    </script>
+</body>
+</html>

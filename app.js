@@ -19,7 +19,7 @@ import {
 
 // TODO: Firebase 콘솔에서 복사한 실제 설정으로 교체하세요.
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
+    apiKey: "AIzaSyAX1_R1seRAs6iAqq99ebcS6JfazByLkYc",
     authDomain: "todo2-682ba.firebaseapp.com",
     databaseURL: "https://todo2-682ba-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "todo2-682ba",

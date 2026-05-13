@@ -280,6 +280,88 @@ ul#todo-list {
     display: none !important;
 }
 
+/* ===== Auth Screen Styles ===== */
+.auth-input {
+    width: 100%;
+    background: #f8fafc;
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    outline: none;
+    transition: var(--transition);
+}
+
+.auth-input:focus {
+    border-color: var(--accent-color);
+    background: #ffffff;
+}
+
+.auth-submit-btn {
+    width: 100%;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 0.5rem;
+}
+
+.auth-submit-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.auth-switch a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* ===== App Header Styles ===== */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#user-info {
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+#logout-btn {
+    background: #f1f5f9;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+#logout-btn:hover {
+    background: #e2e8f0;
+    color: var(--danger);
+}
+
 /* ===== Responsive Design ===== */
 @media (max-width: 480px) {
     .container {

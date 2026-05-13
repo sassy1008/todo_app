@@ -1,29 +1,156 @@
+import { initializeApp } from 'firebase/app';
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    updateProfile 
+} from 'firebase/auth';
+import { 
+    getDatabase, 
+    ref, 
+    set, 
+    onValue, 
+    push, 
+    remove, 
+    update 
+} from 'firebase/database';
+
+// TODO: Firebase 콘솔에서 복사한 실제 설정으로 교체하세요.
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "todo2-682ba.firebaseapp.com",
+    databaseURL: "https://todo2-682ba-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "todo2-682ba",
+    storageBucket: "todo2-682ba.firebasestorage.app",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Firebase 초기화
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
 // DOM 요소 캐싱
+const authScreen = document.getElementById('auth-screen');
+const mainApp = document.getElementById('main-app');
+const userInfo = document.getElementById('user-info');
+const logoutBtn = document.getElementById('logout-btn');
+
+const loginForm = document.getElementById('login-form');
+const signupForm = document.getElementById('signup-form');
+const toSignup = document.getElementById('to-signup');
+const toLogin = document.getElementById('to-login');
+
 const todoInput = document.getElementById('todo-input');
 const addBtn = document.getElementById('add-btn');
 const todoList = document.getElementById('todo-list');
-const emptyState = document.getElementById('empty-state');         // 빈 상태 메시지
-const remainingCount = document.getElementById('remaining-count'); // 남은 개수 텍스트
-const clearCompletedBtn = document.getElementById('clear-completed-btn'); // 일괄 삭제 버튼
+const emptyState = document.getElementById('empty-state');
+const remainingCount = document.getElementById('remaining-count');
+const clearCompletedBtn = document.getElementById('clear-completed-btn');
 
-// 초기 데이터 로드 (createdAt, completedAt이 없는 기존 데이터 대응)
-let todos = JSON.parse(localStorage.getItem('todos')) || [];
+let todos = [];
+let currentUser = null;
+
+// ===== 인증 로직 =====
+
+// 인증 상태 감시
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        authScreen.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        userInfo.textContent = `${user.displayName || '사용자'}님`;
+        loadTodos(user.uid);
+    } else {
+        currentUser = null;
+        authScreen.classList.remove('hidden');
+        mainApp.classList.add('hidden');
+        todoList.innerHTML = '';
+    }
+});
+
+// 화면 전환
+toSignup.onclick = (e) => {
+    e.preventDefault();
+    loginForm.classList.add('hidden');
+    signupForm.classList.remove('hidden');
+};
+
+toLogin.onclick = (e) => {
+    e.preventDefault();
+    signupForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+};
+
+// 회원가입
+document.getElementById('signup-btn').onclick = async () => {
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+
+    if (!name || !email || !password) {
+        alert('모든 필드를 입력해 주세요.');
+        return;
+    }
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+        alert('회원가입 성공!');
+    } catch (error) {
+        alert('회원가입 실패: ' + error.message);
+    }
+};
+
+// 로그인
+document.getElementById('login-btn').onclick = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        alert('로그인 실패: ' + error.message);
+    }
+};
+
+// 로그아웃
+logoutBtn.onclick = () => signOut(auth);
+
+// ===== Todo 로직 =====
 
 /**
- * 할 일 목록을 정렬하고 렌더링합니다.
+ * 특정 사용자의 할 일 목록을 실시간으로 가져옵니다.
+ */
+function loadTodos(uid) {
+    const todosRef = ref(db, `users/${uid}/todos`);
+    onValue(todosRef, (snapshot) => {
+        const data = snapshot.val();
+        todos = [];
+        if (data) {
+            // Firebase 객체를 배열로 변환
+            for (let id in data) {
+                todos.push({ id, ...data[id] });
+            }
+        }
+        renderTodos();
+    });
+}
+
+/**
+ * 할 일 목록을 렌더링합니다.
  */
 function renderTodos() {
     todoList.innerHTML = '';
     
-    // 복합 정렬 로직
-    // 1. 미완료 항목 우선 (completed: false < true)
-    // 2. 미완료 중에는 생성시간 내림차순 (최신순)
-    // 3. 완료 중에는 완료시간 내림차순 (최근 완료순)
+    // 복합 정렬 로직 (기존 로직 유지)
     const sortedTodos = [...todos].sort((a, b) => {
         if (a.completed !== b.completed) {
             return a.completed ? 1 : -1;
         }
-        
         if (!a.completed) {
             return (b.createdAt || 0) - (a.createdAt || 0);
         } else {
@@ -33,38 +160,36 @@ function renderTodos() {
 
     sortedTodos.forEach((todo) => {
         const li = document.createElement('li');
-        // data-todo-id로 고유 식별자 부여 (onchange 파싱보다 안정적)
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         li.dataset.todoId = todo.id;
         
         li.innerHTML = `
-            <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${todo.id})">
+            <input type="checkbox" ${todo.completed ? 'checked' : ''} id="check-${todo.id}">
             <span>${todo.text}</span>
-            <button class="delete-btn" onclick="deleteTodo(${todo.id})" aria-label="삭제">
+            <button class="delete-btn" id="del-${todo.id}" aria-label="삭제">
                 <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
             </button>
         `;
         
+        // 이벤트 바인딩 (onchange/onclick 대신 addEventListener 사용)
+        li.querySelector(`#check-${todo.id}`).onchange = () => toggleTodo(todo.id);
+        li.querySelector(`#del-${todo.id}`).onclick = () => deleteTodo(todo.id);
+        
         todoList.appendChild(li);
     });
     
-    // Lucide 아이콘 초기화
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    if (window.lucide) lucide.createIcons();
 
-    // ===== 하단 UI 업데이트 =====
+    // 하단 UI 업데이트
     const remaining = todos.filter(t => !t.completed).length;
     const hasCompleted = todos.some(t => t.completed);
 
-    // 빈 상태 안내 메시지 표시/숨김
     if (todos.length === 0) {
         emptyState.classList.remove('hidden');
     } else {
         emptyState.classList.add('hidden');
     }
 
-    // 남은 개수 텍스트 업데이트
     if (remaining === 0 && todos.length > 0) {
         remainingCount.textContent = '🎉 모든 할 일을 완료했어요!';
     } else if (remaining > 0) {
@@ -73,7 +198,6 @@ function renderTodos() {
         remainingCount.textContent = '';
     }
 
-    // 완료된 항목이 있을 때만 일괄 삭제 버튼 표시
     if (hasCompleted) {
         clearCompletedBtn.classList.remove('hidden');
     } else {
@@ -82,109 +206,87 @@ function renderTodos() {
 }
 
 /**
- * 새로운 할 일을 추가합니다.
+ * 새로운 할 일을 Firebase에 추가합니다.
  */
-function addTodo() {
+async function addTodo() {
     const text = todoInput.value.trim();
-    if (!text) return;
+    if (!text || !currentUser) return;
     
-    const now = Date.now();
-    todos.push({
-        id: now, // 고유 ID로 타임스탬프 사용
+    const todosRef = ref(db, `users/${currentUser.uid}/todos`);
+    const newTodoRef = push(todosRef);
+    
+    await set(newTodoRef, {
         text: text,
         completed: false,
-        createdAt: now,
+        createdAt: Date.now(),
         completedAt: null
     });
     
-    saveAndRender();
     todoInput.value = '';
     todoInput.focus();
 }
 
 /**
- * 할 일의 완료 상태를 토글합니다.
- * @param {number} id - 항목의 고유 ID
+ * 할 일 완료 상태를 토글합니다.
  */
-window.toggleTodo = function(id) {
+async function toggleTodo(id) {
+    if (!currentUser) return;
     const todo = todos.find(t => t.id === id);
     if (todo) {
-        todo.completed = !todo.completed;
-        todo.completedAt = todo.completed ? Date.now() : null;
-        saveAndRender();
+        const todoRef = ref(db, `users/${currentUser.uid}/todos/${id}`);
+        await update(todoRef, {
+            completed: !todo.completed,
+            completedAt: !todo.completed ? Date.now() : null
+        });
     }
-};
+}
 
 /**
  * 할 일을 삭제합니다.
- * @param {number} id - 항목의 고유 ID
  */
-window.deleteTodo = function(id) {
-    // data-todo-id 속성으로 대상 DOM 요소를 정확히 찾음
+async function deleteTodo(id) {
+    if (!currentUser) return;
     const item = todoList.querySelector(`[data-todo-id="${id}"]`);
     if (!item) return;
 
-    // === 1단계: 내용 페이드아웃 (0 ~ 180ms) ===
+    // 애니메이션 실행
     item.classList.add('removing');
 
-    // === 2단계: 높이 축소로 아래 항목들이 부드럽게 올라옴 (180ms ~) ===
     setTimeout(() => {
-        // 현재 실제 높이를 명시적으로 고정한 뒤 transition으로 0까지 줄임
         const currentHeight = item.offsetHeight;
         item.style.height = currentHeight + 'px';
         item.style.paddingTop = '0';
         item.style.paddingBottom = '0';
         item.style.marginBottom = '0';
-
-        // style 정착 후 바로 0으로 전환 시작 (브라우저 repaint 보장)
         requestAnimationFrame(() => {
             item.classList.add('collapsing');
             item.style.height = '0';
         });
     }, 180);
 
-    // === 3단계: 모든 애니메이션 완료 후 데이터 삭제 및 재렌더링 (180 + 240ms) ===
-    setTimeout(() => {
-        todos = todos.filter(t => t.id !== id);
-        saveAndRender();
+    // 애니메이션 후 데이터 삭제
+    setTimeout(async () => {
+        const todoRef = ref(db, `users/${currentUser.uid}/todos/${id}`);
+        await remove(todoRef);
     }, 420);
-};
-
-/**
- * 데이터를 저장하고 화면을 다시 그립니다.
- */
-function saveAndRender() {
-    localStorage.setItem('todos', JSON.stringify(todos));
-    renderTodos();
 }
 
 /**
- * 완료된 모든 할 일을 일괄 삭제합니다.
- * - 요청에 따라: todos 배열에서 completed가 true인 항목들만 제거
+ * 완료된 할 일을 일괄 삭제합니다.
  */
-function clearCompleted() {
-    todos = todos.filter(t => !t.completed);
-    saveAndRender();
+async function clearCompleted() {
+    if (!currentUser) return;
+    const completedTodos = todos.filter(t => t.completed);
+    const updates = {};
+    completedTodos.forEach(t => {
+        updates[`users/${currentUser.uid}/todos/${t.id}`] = null;
+    });
+    await update(ref(db), updates);
 }
 
-// 이벤트 리스너 등록
+// 이벤트 리스너
 addBtn.addEventListener('click', addTodo);
-clearCompletedBtn.addEventListener('click', clearCompleted); // 일괄 삭제 버튼
-
+clearCompletedBtn.addEventListener('click', clearCompleted);
 todoInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        addTodo();
-    }
+    if (e.key === 'Enter') addTodo();
 });
-
-// 기존 데이터가 있다면 ID 부여 (마이그레이션 도우미)
-todos = todos.map(todo => {
-    if (!todo.id) {
-        todo.id = todo.id || Date.now() + Math.random();
-        todo.createdAt = todo.createdAt || Date.now();
-    }
-    return todo;
-});
-
-// 초기화 호출
-renderTodos();

@@ -1,20 +1,20 @@
 import { initializeApp } from 'firebase/app';
-import { 
-    getAuth, 
-    onAuthStateChanged, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    signOut, 
-    updateProfile 
+import {
+    getAuth,
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    updateProfile
 } from 'firebase/auth';
-import { 
-    getDatabase, 
-    ref, 
-    set, 
-    onValue, 
-    push, 
-    remove, 
-    update 
+import {
+    getDatabase,
+    ref,
+    set,
+    onValue,
+    push,
+    remove,
+    update
 } from 'firebase/database';
 
 // TODO: Firebase 콘솔에서 복사한 실제 설정으로 교체하세요.
@@ -36,10 +36,8 @@ const db = getDatabase(app);
 // DOM 요소 캐싱
 const authScreen = document.getElementById('auth-screen');
 const mainApp = document.getElementById('main-app');
-const pendingScreen = document.getElementById('pending-screen');
 const userInfo = document.getElementById('user-info');
 const logoutBtn = document.getElementById('logout-btn');
-const pendingLogoutBtn = document.getElementById('pending-logout-btn');
 
 const loginForm = document.getElementById('login-form');
 const signupForm = document.getElementById('signup-form');
@@ -55,52 +53,22 @@ const clearCompletedBtn = document.getElementById('clear-completed-btn');
 
 let todos = [];
 let currentUser = null;
-let statusUnsubscribe = null;
-let todosUnsubscribe = null;
 
 // ===== 인증 로직 =====
 
 // 인증 상태 감시
 onAuthStateChanged(auth, (user) => {
-    // 이전 리스너 해제 (중복 실행 방지)
-    if (statusUnsubscribe) {
-        statusUnsubscribe();
-        statusUnsubscribe = null;
-    }
-    if (todosUnsubscribe) {
-        todosUnsubscribe();
-        todosUnsubscribe = null;
-    }
-
     if (user) {
         currentUser = user;
-        
-        // 사용자의 승인 상태(status)를 실시간으로 감시
-        const statusRef = ref(db, `users/${user.uid}/accountInfo/status`);
-        statusUnsubscribe = onValue(statusRef, (snapshot) => {
-            const status = snapshot.val();
-            
-            if (status === 'approved') {
-                // 관리자가 'approved'로 변경함 -> 메인 앱 표시
-                authScreen.classList.add('hidden');
-                pendingScreen.classList.add('hidden');
-                mainApp.classList.remove('hidden');
-                userInfo.textContent = `${user.displayName || '사용자'}님`;
-                loadTodos(user.uid);
-            } else {
-                // 'pending' 상태이거나 데이터가 없는 경우 -> 승인 대기 화면 표시
-                authScreen.classList.add('hidden');
-                mainApp.classList.add('hidden');
-                pendingScreen.classList.remove('hidden');
-            }
-        });
+        authScreen.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        userInfo.textContent = `${user.displayName || '사용자'}님`;
+        loadTodos(user.uid);
     } else {
         currentUser = null;
         authScreen.classList.remove('hidden');
         mainApp.classList.add('hidden');
-        pendingScreen.classList.add('hidden');
         todoList.innerHTML = '';
-        todos = [];
     }
 });
 
@@ -131,17 +99,7 @@ document.getElementById('signup-btn').onclick = async () => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name });
-        
-        // 데이터베이스에 사용자의 계정 정보를 'pending'(승인 대기) 상태로 저장
-        const userRef = ref(db, `users/${userCredential.user.uid}/accountInfo`);
-        await set(userRef, {
-            name: name,
-            email: email,
-            status: 'pending', // 관리자가 'approved'로 바꿔줘야 접속 가능
-            createdAt: Date.now()
-        });
-
-        alert('회원가입이 접수되었습니다! 관리자 승인 후 이용 가능합니다.');
+        alert('회원가입 성공!');
     } catch (error) {
         alert('회원가입 실패: ' + error.message);
     }
@@ -161,7 +119,6 @@ document.getElementById('login-btn').onclick = async () => {
 
 // 로그아웃
 logoutBtn.onclick = () => signOut(auth);
-pendingLogoutBtn.onclick = () => signOut(auth);
 
 // ===== Todo 로직 =====
 
@@ -169,11 +126,8 @@ pendingLogoutBtn.onclick = () => signOut(auth);
  * 특정 사용자의 할 일 목록을 실시간으로 가져옵니다.
  */
 function loadTodos(uid) {
-    if (todosUnsubscribe) {
-        todosUnsubscribe();
-    }
     const todosRef = ref(db, `users/${uid}/todos`);
-    todosUnsubscribe = onValue(todosRef, (snapshot) => {
+    onValue(todosRef, (snapshot) => {
         const data = snapshot.val();
         todos = [];
         if (data) {
@@ -191,7 +145,7 @@ function loadTodos(uid) {
  */
 function renderTodos() {
     todoList.innerHTML = '';
-    
+
     // 복합 정렬 로직 (기존 로직 유지)
     const sortedTodos = [...todos].sort((a, b) => {
         if (a.completed !== b.completed) {
@@ -208,7 +162,7 @@ function renderTodos() {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         li.dataset.todoId = todo.id;
-        
+
         li.innerHTML = `
             <input type="checkbox" ${todo.completed ? 'checked' : ''} id="check-${todo.id}">
             <span>${todo.text}</span>
@@ -216,14 +170,14 @@ function renderTodos() {
                 <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
             </button>
         `;
-        
+
         // 이벤트 바인딩 (onchange/onclick 대신 addEventListener 사용)
         li.querySelector(`#check-${todo.id}`).onchange = () => toggleTodo(todo.id);
         li.querySelector(`#del-${todo.id}`).onclick = () => deleteTodo(todo.id);
-        
+
         todoList.appendChild(li);
     });
-    
+
     if (window.lucide) lucide.createIcons();
 
     // 하단 UI 업데이트
@@ -257,17 +211,17 @@ function renderTodos() {
 async function addTodo() {
     const text = todoInput.value.trim();
     if (!text || !currentUser) return;
-    
+
     const todosRef = ref(db, `users/${currentUser.uid}/todos`);
     const newTodoRef = push(todosRef);
-    
+
     await set(newTodoRef, {
         text: text,
         completed: false,
         createdAt: Date.now(),
         completedAt: null
     });
-    
+
     todoInput.value = '';
     todoInput.focus();
 }
